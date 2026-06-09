@@ -88,8 +88,8 @@
                 <!-- 查看全部按钮 -->
                 <button th:if="${items != null and items.size() > 3}"
                         class="btn btn-link btn-sm p-0 mt-1 text-decoration-none"
-                        data-bs-toggle="collapse" th:attr="data-bs-target='#more-'+${o.id}"
-                        onclick="var t=this; t.textContent=t.textContent.includes('查看全部')?'收起▲':'查看全部 ('+ (t.closest('.order-items').querySelectorAll('.collapse .d-flex').length) +'件) ▼'">
+                        data-bs-toggle="collapse" th:attr="data-bs-target='#more-'+${o.id},data-total=${items.size() - 3}"
+                        onclick="var t=this,n=parseInt(this.dataset.total);t.textContent=t.textContent.includes('查看全部')?'收起▲':'查看全部 ('+n+'件) ▼'">
                     查看全部 (<span th:text="${items.size() - 3}">0</span>件) ▼
                 </button>
                 <!-- 空商品提示 -->

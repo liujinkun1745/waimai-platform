@@ -147,13 +147,35 @@
     </div>
 </div>
 
-<!-- 移动端购物车按钮 -->
-<div class="d-lg-none position-fixed bottom-0 end-0 m-3" style="z-index:1020">
-    <button class="btn btn-warning btn-lg rounded-circle shadow-lg position-relative"
-            data-bs-toggle="modal" data-bs-target="#checkoutModal">
+<!-- 移动端底部购物车栏 -->
+<div class="d-lg-none fixed-bottom bg-white shadow-lg border-top" id="mobileCartBar" style="display:none;z-index:1030">
+    <div class="d-flex align-items-center p-2 gap-2">
+        <div class="flex-grow-1" data-bs-toggle="collapse" data-bs-target="#mobileCartPanel" style="cursor:pointer">
+            <span class="badge bg-danger rounded-pill me-1" id="mCartCount">0</span>
+            <strong class="text-danger">¥<span id="mCartTotal">0.00</span></strong>
+            <small class="text-muted ms-2">点击展开</small>
+        </div>
+        <button class="btn btn-warning btn-sm fw-bold px-3" id="mCheckoutBtn" data-bs-toggle="modal" data-bs-target="#checkoutModal">
+            去结算
+        </button>
+    </div>
+    <!-- 展开的面板 -->
+    <div class="collapse border-top bg-light" id="mobileCartPanel">
+        <div id="mCartItems" class="px-3 py-2" style="max-height:220px;overflow-y:auto"></div>
+        <div class="px-3 pb-2">
+            <button class="btn btn-outline-danger btn-sm w-100" id="mClearCart">
+                <i class="bi bi-trash"></i> 清空购物车
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 旧的移动端圆按钮改为仅购物车为空时显示 -->
+<div class="d-lg-none position-fixed bottom-0 end-0 m-3" style="z-index:1020" id="mobileCartEmpty">
+    <button class="btn btn-warning btn-lg rounded-circle shadow-lg" disabled>
         <i class="bi bi-cart3 fs-4"></i>
         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-              id="mobileCartBadge" style="display:none">0</span>
+              style="display:none">0</span>
     </button>
 </div>
 
@@ -235,12 +257,23 @@
                 '<button class="btn btn-sm btn-outline-secondary py-0 px-1 cart-inc" data-id="'+id+'">+</button>'+
                 '</div></div>';
         }
+        // 桌面端购物车
         document.getElementById('cartItemsDesk').innerHTML = html;
         document.getElementById('cartCountDesk').textContent = qty;
         document.getElementById('cartTotalDesk').textContent = price.toFixed(2);
         document.getElementById('cartEmptyDesk').style.display = qty===0?'block':'none';
         document.getElementById('cartFooterDesk').style.display = qty===0?'none':'block';
-        var b = document.getElementById('mobileCartBadge'); b.textContent = qty; b.style.display = qty===0?'none':'block';
+        // 手机端底部栏
+        document.getElementById('mCartItems').innerHTML = html;
+        document.getElementById('mCartCount').textContent = qty;
+        document.getElementById('mCartTotal').textContent = price.toFixed(2);
+        if (qty === 0) {
+            document.getElementById('mobileCartBar').style.display = 'none';
+            document.getElementById('mobileCartEmpty').style.display = 'block';
+        } else {
+            document.getElementById('mobileCartBar').style.display = 'block';
+            document.getElementById('mobileCartEmpty').style.display = 'none';
+        }
         updateCheckout(c, price);
         updateDebug(c);
     }
@@ -253,7 +286,14 @@
         var ih = '';
         for (var id in c) {
             var it = c[id]; if (it.quantity<=0) continue;
-            ih += '<div class="d-flex justify-content-between small"><span>'+it.name+' × '+it.quantity+'</span><span>¥'+(it.price*it.quantity).toFixed(2)+'</span></div>';
+            ih += '<div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light">'+
+                '<span class="small">'+it.name+'</span>'+
+                '<div class="d-flex align-items-center gap-1">'+
+                '<button class="btn btn-sm btn-outline-secondary py-0 px-1 cart-dec" data-id="'+id+'">−</button>'+
+                '<span class="small" style="min-width:20px;text-align:center">'+it.quantity+'</span>'+
+                '<button class="btn btn-sm btn-outline-secondary py-0 px-1 cart-inc" data-id="'+id+'">+</button>'+
+                '<span class="small text-danger ms-1" style="min-width:60px;text-align:right">¥'+(it.price*it.quantity).toFixed(2)+'</span>'+
+                '</div></div>';
         }
         document.getElementById('checkoutItems').innerHTML = ih || '<p class="text-muted">购物车为空</p>';
         document.getElementById('modalTotal').textContent = total.toFixed(2);
@@ -298,13 +338,24 @@
     // ===== DOM 就绪 =====
     var cart = load();
 
-    // 购物车数量加减（事件委托）
-    document.getElementById('cartItemsDesk').addEventListener('click', function(e) {
-        var btn = e.target.closest('button'); if (!btn) return;
+    // 购物车数量加减（全局事件委托 — 桌面、手机、弹窗全覆盖）
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.cart-dec, .cart-inc');
+        if (!btn) return;
+        e.stopPropagation();
         var id = btn.dataset.id; if (!cart[id]) return;
         if (btn.classList.contains('cart-dec')) { cart[id].quantity--; if (cart[id].quantity<=0) delete cart[id]; }
         else if (btn.classList.contains('cart-inc')) { cart[id].quantity++; }
         save(cart); renderCart(cart);
+    });
+
+    // 手机端清空购物车
+    document.getElementById('mClearCart').addEventListener('click', function() {
+        showConfirm('确定清空购物车吗？', function() {
+            cart = {}; save(cart); renderCart(cart);
+            var panel = document.getElementById('mobileCartPanel');
+            if (panel) bootstrap.Collapse.getInstance(panel)?.hide();
+        });
     });
 
     // 加购按钮（全局事件委托）
