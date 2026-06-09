@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>余额管理 — 美味外卖</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: header}"></th:block>
+<th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+<div class="container mt-4">
+    <a href="javascript:history.back()" class="btn btn-outline-warning btn-sm mb-3" title="返回上一页">
+        <i class="bi bi-arrow-left"></i> 返回
+    </a>
+    <h5 class="fw-bold mb-3"><i class="bi bi-wallet2"></i> 余额管理</h5>
+
+    <div class="row">
+        <div class="col-md-5 mb-3">
+            <!-- 余额卡片 -->
+            <div class="card shadow-sm bg-warning bg-opacity-10">
+                <div class="card-body text-center py-4">
+                    <small class="text-muted">当前余额</small>
+                    <div class="display-5 fw-bold text-danger my-2">¥<span th:text="${user.balance}">0.00</span></div>
+                    <button class="btn btn-warning fw-bold px-4" data-bs-toggle="modal" data-bs-target="#rechargeModal">
+                        <i class="bi bi-plus-circle"></i> 充值
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <!-- 消费记录 -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-list-ul"></i> 余额变动记录</h6></div>
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(records)}" class="text-center py-4 text-muted">
+                        <p>暂无记录</p>
+                    </div>
+                    <table class="table table-sm table-hover mb-0" th:if="${!#lists.isEmpty(records)}">
+                        <thead class="table-light">
+                            <tr>
+                                <th>时间</th>
+                                <th>类型</th>
+                                <th>金额</th>
+                                <th>描述</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="r : ${records}">
+                                <td class="small" th:text="${#temporals.format(r.createdAt,'MM-dd HH:mm')}"></td>
+                                <td>
+                                    <span class="badge" th:classappend="${r.type=='充值'} ? 'bg-success' : 'bg-warning text-dark'"
+                                          th:text="${r.type}"></span>
+                                </td>
+                                <td th:class="${r.type == '充值'} ? 'text-success' : 'text-danger'">
+                                    <span th:if="${r.type == '充值'}">+</span>¥<span th:text="${r.amount}"></span>
+                                </td>
+                                <td class="small text-muted" th:text="${r.description}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 充值 Modal -->
+<div class="modal fade" id="rechargeModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form th:action="@{/consumer/balance/recharge}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">余额充值</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">充值金额（元）</label>
+                    <div class="input-group">
+                        <span class="input-group-text">¥</span>
+                        <input type="number" name="amount" class="form-control" min="0.01" step="0.01" required
+                               placeholder="请输入充值金额" autofocus>
+                    </div>
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="document.querySelector('#rechargeModal input[name=amount]').value='50'">50元</button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="document.querySelector('#rechargeModal input[name=amount]').value='100'">100元</button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="document.querySelector('#rechargeModal input[name=amount]').value='200'">200元</button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="document.querySelector('#rechargeModal input[name=amount]').value='500'">500元</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-warning fw-bold">确认充值</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- 加载 Bootstrap JS 和 main.js -->
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 — 美味外卖</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .register-page {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE082 45%, #FFCA28 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        .register-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 520px;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+            padding: 2rem 2rem 1.5rem;
+            animation: slideUp 0.5s ease;
+        }
+        .register-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--yellow), var(--yellow-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+        }
+        .register-logo .bi { font-size: 1.8rem; color: #FFF; }
+        .nav-pills .nav-link { border-radius: 20px; padding: 0.5rem 1.5rem !important; }
+    </style>
+</head>
+<body>
+
+<div class="register-page">
+    <div class="register-card">
+        <div class="register-logo"><i class="bi bi-shop"></i></div>
+        <h4 class="fw-bold text-center mb-1">创建账号</h4>
+        <p class="text-muted text-center mb-3 small">加入美味外卖，享受便捷生活</p>
+
+        <!-- 错误提示 -->
+        <div th:if="${error}" class="alert alert-danger py-2 d-flex align-items-center gap-2 small">
+            <i class="bi bi-exclamation-circle"></i><span th:text="${error}"></span>
+        </div>
+
+        <!-- 角色选择 -->
+        <ul class="nav nav-pills nav-fill mb-3" id="roleTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="consumer-tab" data-bs-toggle="pill"
+                        data-bs-target="#consumerForm" type="button" role="tab">
+                    <i class="bi bi-person"></i> 消费者
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="merchant-tab" data-bs-toggle="pill"
+                        data-bs-target="#merchantForm" type="button" role="tab">
+                    <i class="bi bi-shop-window"></i> 商家入驻
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- 消费者表单 -->
+            <div class="tab-pane fade show active" id="consumerForm" role="tabpanel">
+                <form th:action="@{/auth/register/consumer}" method="post">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small">用户名 <span class="text-danger">*</span></label>
+                            <input type="text" name="username" class="form-control" placeholder="4-20位字母或数字"
+                                   required minlength="4" maxlength="20">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">手机号 <span class="text-danger">*</span></label>
+                            <input type="text" name="phone" class="form-control" placeholder="11位手机号"
+                                   required pattern="\d{11}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">密码 <span class="text-danger">*</span></label>
+                            <input type="password" name="password" class="form-control" placeholder="最少6位"
+                                   required minlength="6">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">邮箱</label>
+                            <input type="email" name="email" class="form-control" placeholder="选填">
+                        </div>
+                        <div class="col-12 mt-2">
+                            <button type="submit" class="btn btn-warning w-100 fw-bold">
+                                <i class="bi bi-person-plus"></i> 注册消费者
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 商家表单 -->
+            <div class="tab-pane fade" id="merchantForm" role="tabpanel">
+                <form th:action="@{/auth/register/merchant}" method="post">
+                    <h6 class="text-muted small mb-2"><i class="bi bi-person-badge"></i> 登录信息</h6>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <input type="text" name="username" class="form-control" placeholder="用户名" required>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" name="phone" class="form-control" placeholder="手机号" required pattern="\d{11}">
+                        </div>
+                        <div class="col-12">
+                            <input type="password" name="password" class="form-control" placeholder="密码 (最少6位)" required minlength="6">
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <h6 class="text-muted small mb-2"><i class="bi bi-building"></i> 店铺信息</h6>
+                    <div class="row g-2">
+                        <div class="col-md-8">
+                            <input type="text" name="shopName" class="form-control" placeholder="店铺名称" required>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="businessLicense" class="form-control" placeholder="营业执照号" required>
+                        </div>
+                        <div class="col-12">
+                            <input type="text" name="shopAddress" class="form-control" placeholder="店铺地址" required>
+                        </div>
+                        <div class="col-12">
+                            <textarea name="description" class="form-control" rows="1" placeholder="店铺简介 (选填)"></textarea>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <button type="submit" class="btn btn-warning w-100 fw-bold">
+                                <i class="bi bi-shop"></i> 注册商家
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-3">
+            <span class="text-muted small">已有账号？</span>
+            <a th:href="@{/login}" class="text-decoration-none small fw-bold">立即登录</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

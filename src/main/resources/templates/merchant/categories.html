@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类管理 — 美味外卖</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+<!-- 修复说明：编辑按钮改用 data-* 属性 + JS 事件委托，避免 th:attr 中内联 onclick 引号转义问题 -->
+<th:block th:replace="~{fragments/layout :: header}"></th:block>
+<th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm me-2" title="返回上一页">
+                <i class="bi bi-arrow-left"></i> 返回
+            </a>
+            <h5 class="fw-bold mb-0 d-inline"><i class="bi bi-tags"></i> 分类管理</h5>
+        </div>
+        <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#catModal"
+                onclick="clearCatForm()">
+            <i class="bi bi-plus-lg"></i> 新增分类
+        </button>
+    </div>
+
+    <div th:if="${#lists.isEmpty(categories)}" class="text-center py-5 text-muted">
+        <i class="bi bi-tags" style="font-size:3rem"></i>
+        <p class="mt-2">暂无分类，请添加</p>
+    </div>
+
+    <div class="row g-3" th:if="${!#lists.isEmpty(categories)}">
+        <div class="col-md-4" th:each="c : ${categories}">
+            <div class="card shadow-sm">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-warning text-dark me-2" th:text="${c.sortOrder}">1</span>
+                        <span th:text="${c.name}"></span>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <!-- 编辑：用 data-* 传参，JS 事件委托处理 -->
+                        <button class="btn btn-outline-warning btn-sm edit-cat-btn"
+                                data-bs-toggle="modal" data-bs-target="#catModal"
+                                th:attr="data-id=${c.id},data-name=${c.name},data-sort=${c.sortOrder}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <!-- 删除：保持 GET 链接 + confirm -->
+                        <a th:href="@{/merchant/category/delete/{id}(id=${c.id})}"
+                           class="btn btn-outline-danger btn-sm"
+                           onclick="return confirm('删除分类会同时影响该分类下的商品，确定删除吗？')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分类 Modal -->
+<div class="modal fade" id="catModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form th:action="@{/merchant/category/add}" method="post" id="catForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="catModalTitle">新增分类</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">分类名称</label>
+                        <input type="text" name="name" id="catName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">排序（数字越小越靠前）</label>
+                        <input type="number" name="sortOrder" id="catSort" class="form-control" value="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-warning">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 新增 — 重置表单
+    function clearCatForm() {
+        document.getElementById('catModalTitle').textContent = '新增分类';
+        document.getElementById('catForm').action = '/merchant/category/add';
+        document.getElementById('catName').value = '';
+        document.getElementById('catSort').value = '1';
+    }
+
+    // 编辑 — 通过事件委托绑定，解决 th:attr 内联 onclick 参数转义问题
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.edit-cat-btn');
+        if (!btn) return;
+        var id = btn.getAttribute('data-id');
+        var name = btn.getAttribute('data-name');
+        var sort = btn.getAttribute('data-sort');
+        document.getElementById('catModalTitle').textContent = '编辑分类';
+        document.getElementById('catForm').action = '/merchant/category/edit/' + id;
+        document.getElementById('catName').value = name;
+        document.getElementById('catSort').value = sort;
+    });
+</script>
+
+
+<!-- 加载 Bootstrap JS 和 main.js -->
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>
