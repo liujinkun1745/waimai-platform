@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神券 — 美味外卖</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        body { padding-bottom: 80px; background: #F5F5F6; }
+        .coupon-card {
+            background: linear-gradient(135deg, #FFF8E1, #FFE082);
+            border-radius: 16px; padding: 20px; margin-bottom: 16px;
+            position: relative; overflow: hidden; cursor: pointer;
+            transition: all 0.2s; font-size: 0.95rem;
+        }
+        .coupon-card .text-muted, .coupon-card small { font-size: 0.95rem !important; }
+        .coupon-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .coupon-card.claimed { opacity: 0.5; pointer-events: none; background: #F5F5F5; }
+        .coupon-card::before {
+            content: ''; position: absolute;
+            left: -16px; top: 50%; transform: translateY(-50%);
+            width: 32px; height: 32px; border-radius: 50%;
+            background: #F5F5F6;
+        }
+        .coupon-card::after {
+            content: ''; position: absolute;
+            right: -16px; top: 50%; transform: translateY(-50%);
+            width: 32px; height: 32px; border-radius: 50%;
+            background: #F5F5F6;
+        }
+        .my-coupon {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px; background: #FFF; border-radius: 12px;
+            margin-bottom: 8px; border: 1px solid #F0F0F0;
+        }
+        .coupon-amount {
+            font-size: 1.4rem; font-weight: 700; color: #E9482E;
+            min-width: 60px; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container px-3 pt-3" style="max-width:500px">
+    <h5 class="fw-bold mb-3">🎫 每日神券 <small class="text-muted fs-6">三选一</small></h5>
+
+    <div id="dailyCoupons">
+        <div th:each="i : ${#numbers.sequence(0,2)}" class="coupon-card" th:attr="id='dc'+${i}">
+            <div class="d-flex align-items-center gap-3">
+                <div class="coupon-amount" th:attr="id='dcAmount'+${i}">加载中</div>
+                <div>
+                    <div class="fw-bold" th:attr="id='dcName'+${i}"></div>
+                    <small class="text-muted" th:attr="id='dcMin'+${i}"></small>
+                </div>
+                <div class="ms-auto">
+                    <button class="btn btn-warning btn-sm rounded-pill px-4 fw-bold" th:attr="id='dcBtn'+${i}">
+                        立即领取
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="fw-bold mt-4 mb-3">💼 我的优惠券 <small class="text-muted">(<span th:text="${couponCount}">0</span>张)</small></h5>
+    <div th:if="${#lists.isEmpty(coupons)}" class="text-center py-4 text-muted">
+        <p>暂无优惠券，去领一张吧～</p>
+    </div>
+    <div th:each="c : ${coupons}" class="my-coupon" th:attr="data-expires=${c.expiresAt != null ? #temporals.format(c.expiresAt, 'yyyy-MM-dd HH:mm:ss') : 'none'}">
+        <div class="coupon-amount">¥<span th:text="${c.amount}">0</span></div>
+        <div>
+            <div class="fw-bold small" th:text="${c.name}">券名</div>
+            <small class="text-muted" th:if="${c.minOrder > 0}">满¥<span th:text="${c.minOrder}">0</span>可用</small>
+            <small class="text-muted" th:unless="${c.minOrder > 0}">无门槛</small>
+            <div class="small text-danger mt-1 countdown-label" style="font-size:0.7rem">
+                <i class="bi bi-clock"></i> <span class="countdown-text">加载中...</span>
+            </div>
+        </div>
+        <span class="badge ms-auto" th:classappend="${c.used} ? 'bg-secondary' : 'bg-success'"
+              th:text="${c.used} ? '已使用' : '可用'"></span>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<th:block th:replace="~{fragments/consumer-nav :: bottom-nav}"></th:block>
+
+<script>
+// ===== 过期倒计时 =====
+function updateExpirationCountdowns() {
+    var now = new Date();
+    document.querySelectorAll('.my-coupon[data-expires]').forEach(function(el){
+        var exp = el.getAttribute('data-expires');
+        var label = el.querySelector('.countdown-text');
+        if (!label) return;
+        if (!exp || exp === 'none') {
+            label.textContent = '长期有效';
+            return;
+        }
+        var expiresAt = new Date(exp.replace(' ','T'));
+        var diffMs = expiresAt - now;
+        if (diffMs <= 0) {
+            label.textContent = '已过期';
+            el.style.opacity = '0.4';
+        } else if (diffMs < 3600000) {
+            label.textContent = '还剩 ' + Math.ceil(diffMs/60000) + ' 分钟';
+        } else if (diffMs < 86400000) {
+            label.textContent = '还剩 ' + Math.floor(diffMs/3600000) + ' 小时 ' + Math.ceil((diffMs%3600000)/60000) + ' 分钟';
+        } else {
+            label.textContent = '还剩 ' + Math.floor(diffMs/86400000) + ' 天';
+        }
+    });
+}
+updateExpirationCountdowns();
+setInterval(updateExpirationCountdowns, 60000);
+
+fetch('/consumer/coupons/daily')
+    .then(function(r){return r.json();})
+    .then(function(data){
+        var globalClaimed=data.coupons.some(function(c){return c.claimed;});
+        var cs=data.coupons;
+        cs.forEach(function(c,i){
+            document.getElementById('dcAmount'+i).textContent='¥'+c.amount;
+            document.getElementById('dcName'+i).textContent=c.name;
+            document.getElementById('dcMin'+i).textContent=c.minOrder>0?'满¥'+c.minOrder:'无门槛';
+            if(globalClaimed) document.getElementById('dc'+i).classList.add('claimed');
+            if(c.claimed){
+                document.getElementById('dcBtn'+i).textContent='已领取';
+            }
+            document.getElementById('dc'+i).addEventListener('click',function(){
+                if(c.claimed||globalClaimed) return;
+                var fd=new URLSearchParams();
+                fd.append('name',c.name);fd.append('amount',c.amount);fd.append('minOrder',c.minOrder);
+                fetch('/consumer/coupons/claim',{method:'POST',body:fd})
+                    .then(function(r){return r.json();})
+                    .then(function(res){
+                        if(res.ok){
+                            globalClaimed=true;
+                            showToast('领取成功！','success');
+                            document.querySelectorAll('.coupon-card').forEach(function(el){el.classList.add('claimed');});
+                            document.getElementById('dcBtn'+i).textContent='已领取';
+                            for(var j=0;j<3;j++) if(j!==i) document.getElementById('dcBtn'+j).textContent='领取';
+                        }
+                    });
+            });
+        });
+    });
+</script>
+</body>
+</html>

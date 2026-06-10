@@ -5,6 +5,15 @@
 document.addEventListener('DOMContentLoaded', function () {
     initNavScroll();
     initAutoDismissAlerts();
+    // 页面加载完成，完成加载条
+    var bar = document.getElementById('pageLoadingBar');
+    if (bar) { bar.classList.add('done'); setTimeout(function(){ bar.classList.remove('running','done'); bar.style.width='0'; bar.style.opacity='1'; }, 500); }
+});
+
+/* ============ 页面加载条 ============ */
+window.addEventListener('beforeunload', function() {
+    var bar = document.getElementById('pageLoadingBar');
+    if (bar) { bar.style.width='0'; bar.style.opacity='1'; bar.classList.add('running'); }
 });
 
 /* ============ Toast 通知 ============ */

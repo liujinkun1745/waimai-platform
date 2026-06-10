@@ -60,6 +60,7 @@ public class OrderService {
                 .addressSnapshot(buildAddressSnapshot(address))
                 .totalAmount(totalAmount)
                 .status("待接单")
+                .paidAt(LocalDateTime.now())
                 .build();
         order = orderRepository.save(order);
 
@@ -171,6 +172,10 @@ public class OrderService {
         order.setStatus("已完成");
         order.setCompletedAt(LocalDateTime.now());
         orderRepository.save(order);
+        // 更新商家月销量
+        Merchant m = order.getMerchant();
+        m.setMonthlySales(m.getMonthlySales() + 1);
+        merchantRepository.save(m);
     }
 
     /** 消费者确认收货 */
@@ -187,6 +192,10 @@ public class OrderService {
         order.setStatus("已完成");
         order.setCompletedAt(LocalDateTime.now());
         orderRepository.save(order);
+        // 更新商家月销量
+        Merchant m = order.getMerchant();
+        m.setMonthlySales(m.getMonthlySales() + 1);
+        merchantRepository.save(m);
     }
 
     /** 消费者订单列表 */

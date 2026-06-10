@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品管理 — 美味外卖</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        body { padding-bottom: 80px; background: #F5F5F6; }
+        .cat-folder {
+            background: #FFF; border-radius: 12px; margin-bottom: 8px;
+            border: 1px solid #EEE; overflow: hidden;
+        }
+        .cat-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; cursor: pointer; user-select: none;
+            transition: background 0.15s;
+        }
+        .cat-header:hover { background: #FAFAFA; }
+        .cat-header .arrow { transition: transform 0.2s; font-size: 0.7rem; }
+        .cat-header.collapsed .arrow { transform: rotate(-90deg); }
+        .cat-badge { font-size: 0.75rem; color: #999; }
+        .cat-body { padding: 0 12px 12px; }
+        .cat-body.collapsed { display: none; }
+        .product-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px; border-radius: 8px; margin-bottom: 6px;
+            background: #FAFAFA; border: 1px solid #F0F0F0;
+            cursor: grab; transition: all 0.15s;
+        }
+        .product-card:active { cursor: grabbing; opacity: 0.7; }
+        .product-card.drag-over { border-color: var(--yellow-dark); background: #FFF8E1; }
+        .product-img {
+            width: 44px; height: 44px; border-radius: 8px;
+            background: #F0F0F0; display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; overflow: hidden; flex-shrink: 0;
+        }
+        .product-img img { width: 100%; height: 100%; object-fit: cover; }
+    </style>
+</head>
+<body>
+<div class="container px-3 pt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-box text-yellow"></i> 商品管理</h5>
+        <div>
+            <button class="btn btn-outline-warning btn-sm rounded-pill px-3" onclick="showAddCat()"><i class="bi bi-plus"></i> 分类</button>
+            <button class="btn btn-warning btn-sm rounded-pill px-3" onclick="showAddProduct()"><i class="bi bi-plus-lg"></i> 商品</button>
+        </div>
+    </div>
+
+    <!-- 折叠分类 + 商品 -->
+    <div id="catFolders">
+        <div th:each="c : ${categories}" class="cat-folder" th:attr="data-cat=${c.id}">
+            <div class="cat-header" onclick="toggleCat(this)">
+                <i class="bi bi-chevron-down arrow"></i>
+                <span class="fw-bold small" th:text="${c.name}">分类</span>
+                <span class="cat-badge">(<span class="count-el">0</span>)</span>
+                <div class="flex-grow-1"></div>
+                <span class="text-muted small" style="font-size:0.65rem;cursor:pointer" th:onclick="'event.stopPropagation();deleteCat('+${c.id}+')'">删除</span>
+            </div>
+            <div class="cat-body" th:id="'catBody-'+${c.id}">
+                <div th:each="p : ${products}" th:if="${p.category.id == c.id}" class="product-card"
+                     draggable="true" th:attr="data-pid=${p.id}" th:id="'prod-'+${p.id}">
+                    <div class="product-img">
+                        <img th:if="${p.image != null}" th:src="${p.image}" onerror="this.parentElement.textContent='🍽️'">
+                        <span th:unless="${p.image != null}">🍽️</span>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-bold small text-truncate" th:text="${p.name}"></div>
+                        <div class="small text-muted">¥<span th:text="${p.price}">0</span> · 售<span th:text="${p.sales}">0</span></div>
+                    </div>
+                    <button class="btn btn-sm py-0 px-1 toggle-btn" th:attr="data-pid=${p.id},data-status=${p.status}"
+                            th:classappend="${p.status=='上架'}?'text-success':'text-secondary'"
+                            onclick="event.stopPropagation();toggleProduct(this)">
+                        <i class="bi" th:classappend="${p.status=='上架'}?'bi-toggle-on':'bi-toggle-off'"></i>
+                    </button>
+                    <button class="btn btn-sm py-0 px-1 text-muted" th:onclick="'event.stopPropagation();editProduct(' + ${p.id} + ')'"><i class="bi bi-pencil"></i></button>
+                </div>
+                <div class="text-center py-2 text-muted small no-product-msg" th:if="${categoryProductCounts.get(c.id) == null}">拖拽商品到这里</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增分类 Modal -->
+<div class="modal fade" id="catModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content"><div class="modal-header"><h6>新增分类</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body"><input class="form-control" id="catName" placeholder="分类名称"><input class="form-control mt-2" id="catSort" placeholder="排序" type="number" value="1"></div>
+            <div class="modal-footer"><button class="btn btn-warning btn-sm" onclick="addCategory()">保存</button></div></div>
+    </div>
+</div>
+
+<!-- 新增/编辑商品 Modal -->
+<div class="modal fade" id="prodModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content"><div class="modal-header"><h6 id="prodModalTitle">新增商品</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body"><div class="row g-2">
+                <div class="col-8"><input class="form-control" id="prodName" placeholder="商品名称"></div>
+                <div class="col-4"><input class="form-control" id="prodPrice" placeholder="价格" type="number" step="0.01"></div>
+                <div class="col-6"><select class="form-select" id="prodCat"><option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"></option></select></div>
+                <div class="col-3"><input class="form-control" id="prodStock" placeholder="库存" type="number" value="999"></div>
+                <div class="col-3"><input class="form-control" id="prodImage" placeholder="图片URL"></div>
+                <div class="col-12"><textarea class="form-control" id="prodDesc" rows="1" placeholder="描述"></textarea></div>
+            </div></div>
+            <div class="modal-footer"><button class="btn btn-warning btn-sm" id="prodSaveBtn" onclick="saveProduct()">保存</button></div></div>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<th:block th:replace="~{fragments/merchant-nav :: bottom-nav}"></th:block>
+
+<script>
+// 更新各分类商品数
+document.querySelectorAll('.cat-folder').forEach(function(f){
+    f.querySelector('.count-el').textContent = f.querySelectorAll('.product-card').length;
+});
+
+// 折叠分类
+function toggleCat(hdr){
+    hdr.classList.toggle('collapsed');
+    hdr.nextElementSibling.classList.toggle('collapsed');
+}
+
+// AJAX上下架
+function toggleProduct(btn){
+    var pid=btn.dataset.pid;
+    fetch('/merchant/product/toggle/'+pid).then(function(){
+        var isOn=btn.dataset.status==='上架';
+        btn.dataset.status=isOn?'下架':'上架';
+        btn.classList.toggle('text-success',!isOn);
+        btn.classList.toggle('text-secondary',isOn);
+        btn.querySelector('i').classList.toggle('bi-toggle-on',!isOn);
+        btn.querySelector('i').classList.toggle('bi-toggle-off',isOn);
+        showToast(isOn?'已下架':'已上架','info');
+    });
+}
+
+function showAddCat(){ document.getElementById('catName').value='';document.getElementById('catSort').value='1';new bootstrap.Modal('#catModal').show(); }
+function addCategory(){
+    var n=document.getElementById('catName').value.trim(),s=document.getElementById('catSort').value;
+    if(!n) return;
+    var fd=new URLSearchParams();fd.append('name',n);fd.append('sortOrder',s);
+    fetch('/merchant/category/add',{method:'POST',body:fd}).then(function(){location.reload();});
+}
+function deleteCat(cid){ showConfirm('删除分类及商品？',function(){location.href='/merchant/category/delete/'+cid;}); }
+
+var editId=null;
+function showAddProduct(){ editId=null;document.getElementById('prodModalTitle').textContent='新增商品';
+    document.getElementById('prodName').value='';document.getElementById('prodPrice').value='';
+    document.getElementById('prodStock').value='999';document.getElementById('prodImage').value='';
+    document.getElementById('prodDesc').value='';new bootstrap.Modal('#prodModal').show(); }
+function editProduct(pid){
+    var row=document.getElementById('prod-'+pid);
+    editId=pid;document.getElementById('prodModalTitle').textContent='编辑商品';
+    document.getElementById('prodName').value=row.querySelector('.fw-bold').textContent;
+    document.getElementById('prodPrice').value=row.querySelector('.small.text-muted').textContent.replace('¥','').split('·')[0].trim();
+    document.getElementById('prodStock').value='999';document.getElementById('prodImage').value='';
+    document.getElementById('prodDesc').value='';new bootstrap.Modal('#prodModal').show();
+}
+function saveProduct(){
+    var fd=new URLSearchParams();
+    fd.append('categoryId',document.getElementById('prodCat').value);
+    fd.append('name',document.getElementById('prodName').value);
+    fd.append('price',document.getElementById('prodPrice').value);
+    fd.append('stock',document.getElementById('prodStock').value);
+    fd.append('image',document.getElementById('prodImage').value);
+    fd.append('description',document.getElementById('prodDesc').value);
+    var url=editId?'/merchant/product/edit/'+editId:'/merchant/product/add';
+    fetch(url,{method:'POST',body:fd}).then(function(){location.reload();});
+}
+
+// 拖拽移动分类
+var dragPid=null;
+document.querySelectorAll('.product-card').forEach(function(card){
+    card.addEventListener('dragstart',function(e){dragPid=this.dataset.pid;this.style.opacity='0.5';});
+    card.addEventListener('dragend',function(e){this.style.opacity='';dragPid=null;document.querySelectorAll('.cat-body').forEach(function(b){b.classList.remove('drag-over');});});
+});
+document.querySelectorAll('.cat-body').forEach(function(body){
+    body.addEventListener('dragover',function(e){e.preventDefault();this.classList.add('drag-over');});
+    body.addEventListener('dragleave',function(){this.classList.remove('drag-over');});
+    body.addEventListener('drop',function(e){
+        e.preventDefault();this.classList.remove('drag-over');
+        var catId=this.closest('.cat-folder').dataset.cat;
+        if(!dragPid||!catId) return;
+        var fd=new URLSearchParams();fd.append('productId',dragPid);fd.append('categoryId',catId);
+        fetch('/merchant/product/move-category',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(res){
+            if(res.ok){ document.getElementById('prod-'+dragPid).remove(); showToast('已移动','success');
+                document.querySelectorAll('.cat-folder').forEach(function(f){f.querySelector('.count-el').textContent=f.querySelectorAll('.product-card').length;}); }
+        });
+    });
+});
+</script>
+</body>
+</html>

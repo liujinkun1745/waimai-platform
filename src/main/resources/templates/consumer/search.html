@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索 — 美味外卖</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        body { padding-bottom: 80px; background: #F5F5F6; }
+        .search-header {
+            position: sticky; top: 0; z-index: 1030;
+            background: #FFF; padding: 10px 12px;
+            border-bottom: 1px solid #EEE;
+        }
+        .search-input-wrap {
+            position: relative;
+            display: flex; align-items: center; gap: 8px;
+            background: #F5F5F6; border-radius: 24px;
+            padding: 6px 16px;
+        }
+        .search-input-wrap input {
+            flex: 1; border: none; background: none; outline: none;
+            font-size: 0.95rem; padding: 6px 0;
+        }
+        .search-input-wrap i { color: #999; }
+        .suggestion-list {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: #FFF; border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            margin-top: 4px; overflow: hidden; display: none; z-index: 100;
+        }
+        .suggestion-list.show { display: block; }
+        .suggestion-item {
+            padding: 12px 16px; cursor: pointer;
+            border-bottom: 1px solid #F5F5F5;
+            transition: background 0.1s;
+        }
+        .suggestion-item:hover { background: #FFF8E1; }
+        .suggestion-item:last-child { border-bottom: none; }
+        .hot-section { margin-top: 16px; }
+        .hot-tag {
+            display: inline-block; padding: 6px 14px; margin: 4px;
+            background: #FFF; border-radius: 20px; font-size: 0.85rem;
+            color: #333; text-decoration: none;
+            transition: all 0.15s;
+        }
+        .hot-tag:hover { background: #FFF8E1; color: var(--yellow-dark); }
+    </style>
+</head>
+<body>
+<div class="search-header">
+    <div class="search-input-wrap position-relative">
+        <i class="bi bi-search"></i>
+        <input type="text" id="searchInput" placeholder="搜索商家..." autocomplete="off"
+               th:value="${keyword}">
+        <a th:href="@{/consumer/index}" class="text-muted" th:if="${keyword != null}">
+            <i class="bi bi-x-circle"></i>
+        </a>
+        <div class="suggestion-list" id="suggestionList"></div>
+    </div>
+</div>
+
+<div class="container px-3 pt-3">
+    <!-- 搜索结果 -->
+    <div id="searchResults" th:if="${keyword != null and !keyword.isEmpty()}">
+        <h6 class="fw-bold mb-2">搜索结果</h6>
+        <div th:if="${#lists.isEmpty(merchants)}" class="text-center py-5 text-muted">
+            <p>没有找到相关商家</p>
+        </div>
+        <a th:each="m : ${merchants}" th:href="@{/consumer/merchant/{id}(id=${m.id})}"
+           class="text-decoration-none">
+            <div class="card merchant-card mb-2">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center"
+                             style="width:56px;height:56px;background:linear-gradient(135deg,#ffd101,#ffb800);color:#FFF;font-weight:700;font-size:1.1rem"
+                             th:text="${#strings.substring(m.shopName,0,2)}"></div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-1" th:text="${m.shopName}"></h6>
+                            <div class="small">
+                                <span class="text-warning">⭐<span th:text="${m.rating}">4.5</span></span>
+                                <span class="text-muted ms-2">月售<span th:text="${m.monthlySales}">0</span></span>
+                                <span class="text-muted ms-2">配送¥<span th:text="${m.deliveryFee}">3</span></span>
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- 热搜商家（输入为空时） -->
+    <div class="hot-section" th:if="${keyword == null or keyword.isEmpty()}">
+        <h6 class="fw-bold mb-2">🔥 热门搜索</h6>
+        <div class="mb-3">
+            <a th:href="@{/consumer/search(keyword='烧烤')}" class="hot-tag">烧烤</a>
+            <a th:href="@{/consumer/search(keyword='咖啡')}" class="hot-tag">咖啡</a>
+            <a th:href="@{/consumer/search(keyword='蛋糕')}" class="hot-tag">蛋糕</a>
+            <a th:href="@{/consumer/search(keyword='汉堡')}" class="hot-tag">汉堡</a>
+            <a th:href="@{/consumer/search(keyword='水果')}" class="hot-tag">水果</a>
+            <a th:href="@{/consumer/search(keyword='麻辣')}" class="hot-tag">麻辣</a>
+            <a th:href="@{/consumer/search(keyword='炸鸡')}" class="hot-tag">炸鸡</a>
+        </div>
+
+        <h6 class="fw-bold mb-2">🏪 热门商家</h6>
+        <a th:each="m : ${hotMerchants}" th:href="@{/consumer/merchant/{id}(id=${m.id})}"
+           class="text-decoration-none">
+            <div class="card merchant-card mb-2">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center"
+                             style="width:56px;height:56px;background:linear-gradient(135deg,#ffd101,#ffb800);color:#FFF;font-weight:700;font-size:1.1rem"
+                             th:text="${#strings.substring(m.shopName,0,2)}"></div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-1" th:text="${m.shopName}"></h6>
+                            <div class="small text-muted" th:text="${m.description}"></div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<th:block th:replace="~{fragments/consumer-nav :: bottom-nav}"></th:block>
+
+<script>
+var allMerchants = [];
+// 加载所有商家名用于建议
+fetch('/consumer/index').then(function(r){return r.text();}).then(function(html){
+    var doc = new DOMParser().parseFromString(html,'text/html');
+    doc.querySelectorAll('.merchant-card h6,.merchant-card .fw-bold').forEach(function(el){
+        var name = el.textContent.trim();
+        if(name && name.length>0) allMerchants.push(name);
+    });
+});
+
+var input = document.getElementById('searchInput');
+var list = document.getElementById('suggestionList');
+var timer;
+input.addEventListener('input', function() {
+    clearTimeout(timer);
+    var q = this.value.trim();
+    if (!q) { list.classList.remove('show'); return; }
+    timer = setTimeout(function() {
+        var matches = allMerchants.filter(function(m){ return m.includes(q); });
+        if (matches.length === 0) { list.classList.remove('show'); return; }
+        list.innerHTML = matches.map(function(m){
+            return '<div class="suggestion-item" data-q="'+m+'">🔍 '+m+'</div>';
+        }).join('');
+        list.classList.add('show');
+    }, 150);
+});
+
+list.addEventListener('click', function(e) {
+    var item = e.target.closest('.suggestion-item');
+    if (!item) return;
+    window.location.href = '/consumer/search?keyword=' + encodeURIComponent(item.dataset.q);
+});
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-input-wrap')) list.classList.remove('show');
+});
+</script>
+</body>
+</html>

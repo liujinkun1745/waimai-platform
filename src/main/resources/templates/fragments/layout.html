@@ -110,8 +110,9 @@
 
 <!-- 核心脚本 (fragment) — 必须内嵌在 fragment 中才能被各页面的 th:replace 加载 -->
 <th:block th:fragment="scripts">
+    <div id="pageLoadingBar"></div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/main.js?v=2"></script>
+    <script src="/js/main.js?v=3"></script>
 </th:block>
 </body>
 </html>

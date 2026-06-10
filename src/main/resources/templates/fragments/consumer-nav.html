@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="bottom-nav">
+<style>
+/* 底部导航 */
+.bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 1030;
+    background: #FFF; border-top: 1px solid #EEE;
+    display: flex; justify-content: space-around;
+    padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+}
+.bottom-nav .nav-item {
+    display: flex; flex-direction: column; align-items: center;
+    text-decoration: none; color: #999; font-size: 0.65rem;
+    padding: 2px 12px; transition: color 0.2s;
+}
+.bottom-nav .nav-item i { font-size: 1.3rem; margin-bottom: 1px; }
+.bottom-nav .nav-item.active { color: var(--yellow-dark); font-weight: 600; }
+</style>
+<nav class="bottom-nav">
+    <a class="nav-item" th:classappend="${activeTab == 'home'} ? 'active'"
+       th:href="@{/consumer/index}">
+        <i class="bi bi-house"></i> 首页
+    </a>
+    <a class="nav-item" th:classappend="${activeTab == 'coupons'} ? 'active'"
+       th:href="@{/consumer/coupons-page}">
+        <i class="bi bi-ticket-perforated"></i> 神券
+    </a>
+    <a class="nav-item" th:classappend="${activeTab == 'orders'} ? 'active'"
+       th:href="@{/consumer/orders}">
+        <i class="bi bi-receipt"></i> 订单
+    </a>
+    <a class="nav-item" th:classappend="${activeTab == 'my'} ? 'active'"
+       th:href="@{/consumer/my}">
+        <i class="bi bi-person"></i> 我的
+    </a>
+</nav>
+
+<!-- 顶部栏：品牌左对齐底部"首页"，搜索右对齐底部"我的" -->
+<style>
+.consumer-top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 30px; background: #FFF;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1040;
+}
+.consumer-top-bar .brand { font-size: 1.15rem; font-weight: 700; }
+.consumer-top-bar .brand span { color: var(--yellow-dark); }
+.consumer-top-bar .search-btn { font-size: 1.2rem; color: #555; text-decoration: none; }
+</style>
+<div class="consumer-top-bar">
+    <a href="/" class="text-decoration-none text-dark brand">
+        <i class="bi bi-shop"></i> <span>美味</span>外卖
+    </a>
+    <a th:href="@{/consumer/search}" class="search-btn">
+        <i class="bi bi-search"></i>
+    </a>
+</div>
+<!-- 隐藏原有导航栏，消除其占位 -->
+<style>
+#mainNav { display: none !important; }
+body { margin-top: 0 !important; padding-top: 52px !important; padding-bottom: 80px !important; }
+.main-content { padding-top: 0 !important; margin-top: 0 !important; }
+</style>
+</th:block>
+</body>
+</html>

@@ -34,9 +34,9 @@ public class ProductService {
         return productRepository.findByMerchantIdAndStatus(merchantId, "上架");
     }
 
-    /** 按商家查找所有商品（含下架，供商家管理用） */
+    /** 按商家查找所有商品（含下架，供商家管理用），已 JOIN FETCH 分类 */
     public List<Product> listAll(Long merchantId) {
-        return productRepository.findByMerchantId(merchantId);
+        return productRepository.findByMerchantIdWithCategory(merchantId);
     }
 
     /** 按 ID 查找 */

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="bottom-nav">
+<style>
+/* 商家端：隐藏原有导航，用简洁顶部栏替代 */
+#mainNav { display: none !important; }
+body { padding-top: 52px !important; padding-bottom: 80px !important; }
+
+/* 商家顶部栏 */
+.merchant-top-bar {
+    display: flex; align-items: center;
+    padding: 10px 30px; background: #FFF;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1040;
+}
+.merchant-top-bar .brand { font-size: 1.15rem; font-weight: 700; }
+.merchant-top-bar .brand span { color: var(--yellow-dark); }
+
+/* 商家底部导航 */
+.merchant-bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 1030;
+    background: #FFF; border-top: 1px solid #EEE;
+    display: flex; justify-content: space-around;
+    padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+}
+.merchant-bottom-nav .nav-item {
+    display: flex; flex-direction: column; align-items: center;
+    text-decoration: none; color: #999; font-size: 0.65rem;
+    padding: 2px 10px; transition: color 0.2s;
+}
+.merchant-bottom-nav .nav-item i { font-size: 1.3rem; margin-bottom: 1px; }
+.merchant-bottom-nav .nav-item.active { color: var(--yellow-dark); font-weight: 600; }
+</style>
+<!-- 商家顶部栏 -->
+<div class="merchant-top-bar">
+    <a href="/" class="text-decoration-none text-dark brand">
+        <i class="bi bi-shop"></i> <span>美味</span>外卖
+    </a>
+</div>
+<nav class="merchant-bottom-nav">
+    <a class="nav-item" th:classappend="${activeTab == 'orders'} ? 'active'"
+       th:href="@{/merchant/orders}">
+        <i class="bi bi-receipt"></i> 订单
+    </a>
+    <a class="nav-item" th:classappend="${activeTab == 'products'} ? 'active'"
+       th:href="@{/merchant/products-all}">
+        <i class="bi bi-box"></i> 商品
+    </a>
+    <a class="nav-item" th:classappend="${activeTab == 'my'} ? 'active'"
+       th:href="@{/merchant/my}">
+        <i class="bi bi-person"></i> 我的
+    </a>
+</nav>
+</th:block>
+</body>
+</html>

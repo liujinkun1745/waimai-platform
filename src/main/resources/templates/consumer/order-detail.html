@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -12,7 +12,7 @@
 <th:block th:replace="~{fragments/layout :: header}"></th:block>
 <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
-<div class="container mt-4">
+<div class="container mt-4" th:with="step=${order.step}">
     <a th:href="@{/consumer/orders}" class="btn btn-outline-warning btn-sm mb-3">
         <i class="bi bi-arrow-left"></i> 返回订单列表
     </a>
@@ -21,27 +21,93 @@
         <div class="card-header bg-white">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h6 class="mb-0">
+                    <h6 class="mb-1">
                         <i class="bi bi-shop text-warning"></i>
-                        <span th:text="${order.merchant.shopName}">商家名称</span>
+                        <span th:text="${order.merchant.shopName}">商家</span>
                         <small class="text-muted ms-2">订单号: <span th:text="${order.orderNo}"></span></small>
                     </h6>
+                    <small class="text-muted" th:text="${#temporals.format(order.createdAt,'yyyy-MM-dd HH:mm:ss')}"></small>
                 </div>
-                <span class="badge fs-6" th:classappend="${order.status == '待接单' || order.status == '待配送' || order.status == '配送中' ? 'bg-warning text-dark' : (order.status == '已完成' ? 'bg-success' : (order.status == '已取消' ? 'bg-secondary' : 'bg-info'))}"
-                      th:text="${order.status}"></span>
+                <span class="status-badge" th:class="'status-' + ${order.status}" th:text="${order.status}" style="font-size:0.9rem"></span>
             </div>
         </div>
         <div class="card-body">
-            <!-- 商品列表 -->
-            <h6 class="fw-bold">商品清单</h6>
+            <!-- 步骤条 -->
+            <div th:if="${order.status != '已取消'}" class="order-stepper mb-4 px-2">
+                <div class="stepper-step">
+                    <div class="stepper-dot" th:classappend="${step >= 0} ? 'active' : ''" style="width:34px;height:34px">
+                        <span th:if="${step > 0}"><i class="bi bi-check"></i></span>
+                        <span th:unless="${step > 0}">1</span>
+                    </div>
+                    <span class="stepper-label" th:classappend="${step == 0} ? 'active' : (${step > 0} ? 'done' : '')" style="font-size:0.8rem">待接单</span>
+                    <small class="text-muted" style="font-size:0.65rem" th:if="${order.acceptedAt != null}" th:text="${#temporals.format(order.acceptedAt,'HH:mm')}"></small>
+                </div>
+                <div class="stepper-step">
+                    <div class="stepper-dot" th:classappend="${step >= 1} ? 'active' : ''" style="width:34px;height:34px">
+                        <span th:if="${step > 1}"><i class="bi bi-check"></i></span>
+                        <span th:unless="${step > 1}">2</span>
+                    </div>
+                    <span class="stepper-label" th:classappend="${step == 1} ? 'active' : (${step > 1} ? 'done' : '')" style="font-size:0.8rem">待配送</span>
+                    <small class="text-muted" style="font-size:0.65rem" th:if="${order.deliveredAt != null}" th:text="${#temporals.format(order.deliveredAt,'HH:mm')}"></small>
+                </div>
+                <div class="stepper-step">
+                    <div class="stepper-dot" th:classappend="${step >= 2} ? 'active' : ''" style="width:34px;height:34px">
+                        <span th:if="${step > 2}"><i class="bi bi-check"></i></span>
+                        <span th:unless="${step > 2}">3</span>
+                    </div>
+                    <span class="stepper-label" th:classappend="${step == 2} ? 'active' : (${step > 2} ? 'done' : '')" style="font-size:0.8rem">配送中</span>
+                    <small class="text-muted" style="font-size:0.65rem" th:if="${order.completedAt != null}" th:text="${#temporals.format(order.completedAt,'HH:mm')}"></small>
+                </div>
+                <div class="stepper-step">
+                    <div class="stepper-dot" th:classappend="${step >= 3} ? 'done' : ''" style="width:34px;height:34px">
+                        <span th:if="${step >= 3}"><i class="bi bi-check"></i></span>
+                        <span th:unless="${step >= 3}">✓</span>
+                    </div>
+                    <span class="stepper-label" th:classappend="${step >= 3} ? 'done' : ''" style="font-size:0.8rem">已完成</span>
+                </div>
+            </div>
+
+            <!-- 已取消 -->
+            <div th:if="${order.status == '已取消'}" class="stepper-cancelled mb-4">
+                <div class="cancelled-dot" style="width:34px;height:34px"><i class="bi bi-x text-danger fs-5"></i></div>
+                <div><strong>订单已取消</strong><br><small class="text-muted">如需帮助请联系客服</small></div>
+            </div>
+
+            <!-- 配送中：预计送达 + 配送进度 + 骑手 -->
+            <th:block th:if="${order.status == '配送中'}">
+                <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3" style="background:#FFF8E1">
+                    <i class="bi bi-clock fs-4 text-warning"></i>
+                    <div>
+                        <small class="text-muted">预计送达</small><br>
+                        <span class="countdown-timer"
+                              th:attr="data-delivery=${#temporals.format(order.estimatedDelivery, 'yyyy-MM-dd HH:mm:ss')}">...</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>已取货</span><span>配送中</span><span>即将送达</span>
+                    </div>
+                    <div class="delivery-progress">
+                        <div class="progress-fill" id="deliveryBar" style="width:60%"></div>
+                    </div>
+                </div>
+                <div class="rider-card mb-3">
+                    <div class="rider-avatar">李</div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small">李师傅</div>
+                        <small class="text-muted">评分 4.9 · 已配送 1286 单</small>
+                    </div>
+                    <a href="tel:138****5678" class="btn btn-outline-success btn-sm rounded-circle">
+                        <i class="bi bi-telephone"></i>
+                    </a>
+                </div>
+            </th:block>
+
+            <!-- 商品清单 -->
+            <h6 class="fw-bold mt-4">商品清单</h6>
             <table class="table table-sm">
                 <thead class="table-light">
-                    <tr>
-                        <th>商品</th>
-                        <th class="text-end">单价</th>
-                        <th class="text-end">数量</th>
-                        <th class="text-end">小计</th>
-                    </tr>
+                    <tr><th>商品</th><th class="text-end">单价</th><th class="text-end">数量</th><th class="text-end">小计</th></tr>
                 </thead>
                 <tbody>
                     <tr th:each="item : ${items}">
@@ -59,7 +125,6 @@
                 </tfoot>
             </table>
 
-            <!-- 订单信息 -->
             <h6 class="fw-bold mt-4">订单信息</h6>
             <div class="row small text-muted">
                 <div class="col-md-6">
@@ -70,16 +135,48 @@
                 <div class="col-md-6">
                     <p th:if="${order.deliveredAt}">配送时间：<span th:text="${#temporals.format(order.deliveredAt,'yyyy-MM-dd HH:mm:ss')}"></span></p>
                     <p th:if="${order.completedAt}">完成时间：<span th:text="${#temporals.format(order.completedAt,'yyyy-MM-dd HH:mm:ss')}"></span></p>
-                    <p>配送地址：<span th:text="${order.addressSnapshot}"></span></p>
+                    <p>收货地址：<span th:text="${order.addressSnapshot}"></span></p>
                 </div>
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+                <form th:if="${order.status=='待接单'}" th:action="@{/consumer/order/cancel/{id}(id=${order.id})}" method="post">
+                    <button type="submit" class="btn btn-outline-danger"
+                            onclick="showConfirm('确定取消订单吗？',function(){this.closest('form').submit()}.bind(this));return false;">
+                        <i class="bi bi-x-circle"></i> 取消订单
+                    </button>
+                </form>
+                <form th:if="${order.status=='配送中'}" th:action="@{/consumer/order/confirm/{id}(id=${order.id})}" method="post">
+                    <button type="submit" class="btn btn-warning fw-bold btn-pulse">
+                        <i class="bi bi-check-circle"></i> 确认收货
+                    </button>
+                </form>
+                <th:block th:if="${order.status == '已完成'}">
+                    <span th:if="${reviewed}" class="badge bg-success py-2 px-3"><i class="bi bi-check-lg"></i> 已评价</span>
+                    <a th:unless="${reviewed}" th:href="@{/consumer/order/{id}/review(id=${order.id})}" class="btn btn-warning fw-bold">
+                        <i class="bi bi-star-fill"></i> 去评价
+                    </a>
+                </th:block>
             </div>
         </div>
     </div>
 </div>
 
-
-<!-- 加载 Bootstrap JS 和 main.js -->
 <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 <th:block th:replace="~{fragments/layout :: footer}"></th:block>
+
+<script>
+var el = document.querySelector('.countdown-timer');
+if (el) {
+    var t = new Date(el.dataset.delivery).getTime();
+    (function tick() {
+        var d = Math.max(0, Math.floor((t - Date.now()) / 60000));
+        el.textContent = d + ' 分钟后';
+        if (d > 0) setTimeout(tick, 30000);
+    })();
+}
+var bar = document.getElementById('deliveryBar');
+if (bar) setTimeout(function() { bar.style.width = '80%'; }, 2000);
+</script>
 </body>
 </html>

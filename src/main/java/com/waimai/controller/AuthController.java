@@ -41,7 +41,7 @@ public class AuthController {
             if ("ROLE_CONSUMER".equals(role)) {
                 return "redirect:/consumer/index";
             } else if ("ROLE_MERCHANT".equals(role)) {
-                return "redirect:/merchant/index";
+                return "redirect:/merchant/orders";
             }
         }
         return "redirect:/";

@@ -1,6 +1,7 @@
 package com.waimai.controller;
 
 import com.waimai.entity.*;
+import com.waimai.repository.*;
 import com.waimai.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,6 +30,9 @@ public class MerchantController {
     private final CategoryService categoryService;
     private final ProductService productService;
     private final OrderService orderService;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final ReviewRepository reviewRepository;
 
     /** 获取当前商家 */
     private Merchant currentMerchant(UserDetails userDetails) {
@@ -60,6 +64,7 @@ public class MerchantController {
         List<Product> products = productService.listAll(merchant.getId());
         model.addAttribute("productCount", products.size());
 
+        model.addAttribute("activeTab", "dashboard");
         return "merchant/index";
     }
 
@@ -94,7 +99,36 @@ public class MerchantController {
         Merchant merchant = currentMerchant(userDetails);
         merchantService.toggleStatus(merchant.getId());
         ra.addFlashAttribute("message", "营业状态已切换");
-        return "redirect:/merchant/index";
+        return "redirect:/merchant/orders";
+    }
+
+    // ============ 商品+分类合并页 ============
+
+    @GetMapping("/products-all")
+    public String productsAll(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        Merchant merchant = currentMerchant(userDetails);
+        List<Product> products = productService.listAll(merchant.getId());
+        List<Category> categories = categoryService.listByMerchant(merchant.getId());
+        // 预计算各分类商品数，避免模板中使用复杂的 .?[] 表达式
+        Map<Long, Long> categoryProductCounts = new HashMap<>();
+        for (Product p : products) {
+            categoryProductCounts.merge(p.getCategory().getId(), 1L, Long::sum);
+        }
+        model.addAttribute("merchant", merchant);
+        model.addAttribute("products", products);
+        model.addAttribute("categories", categories);
+        model.addAttribute("categoryProductCounts", categoryProductCounts);
+        model.addAttribute("activeTab", "products");
+        return "merchant/products-all";
+    }
+
+    @PostMapping("/product/move-category")
+    @ResponseBody
+    public Map<String, Object> moveProduct(@RequestParam Long productId, @RequestParam Long categoryId) {
+        Product p = productService.findById(productId);
+        p.setCategory(categoryRepository.getReferenceById(categoryId));
+        productRepository.save(p);
+        return Map.of("ok", true);
     }
 
     // ============ 分类管理 ============
@@ -146,6 +180,7 @@ public class MerchantController {
         model.addAttribute("merchant", merchant);
         model.addAttribute("products", products);
         model.addAttribute("categories", categories);
+        model.addAttribute("activeTab", "products");
         return "merchant/products";
     }
 
@@ -199,10 +234,22 @@ public class MerchantController {
         List<Order> orders = orderService.listByMerchant(merchant.getId(), status);
         Map<Long, List<OrderItem>> itemsMap =
                 orderService.getOrderItemsBatch(orders.stream().map(Order::getId).toList());
+        // 仪表盘数据
+        java.time.LocalDate today = java.time.LocalDate.now();
+        List<Order> allOrders = orderService.listByMerchant(merchant.getId(), null);
+        long pendingCount = allOrders.stream().filter(o -> "待接单".equals(o.getStatus())).count();
+        long todayCount = allOrders.stream().filter(o -> o.getCreatedAt().toLocalDate().equals(today)).count();
+        BigDecimal todayEarnings = allOrders.stream()
+                .filter(o -> "已完成".equals(o.getStatus()) && o.getCreatedAt().toLocalDate().equals(today))
+                .map(Order::getTotalAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         model.addAttribute("merchant", merchant);
         model.addAttribute("orders", orders);
         model.addAttribute("itemsMap", itemsMap);
+        model.addAttribute("pendingCount", pendingCount);
+        model.addAttribute("todayCount", todayCount);
+        model.addAttribute("todayEarnings", todayEarnings);
         model.addAttribute("currentStatus", status);
+        model.addAttribute("activeTab", "orders");
         return "merchant/orders";
     }
 
@@ -259,6 +306,51 @@ public class MerchantController {
             ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/merchant/orders";
+    }
+
+    // ============ 评价管理 ============
+
+    @GetMapping("/reviews")
+    public String reviews(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        Merchant merchant = currentMerchant(userDetails);
+        List<Review> reviews = reviewRepository.findByMerchantIdOrderByCreatedAtDesc(merchant.getId());
+        // 计算评分分布
+        int[] ratingDist = new int[6]; // 0-5 星
+        Map<Long, Integer> roundedStars = new HashMap<>();
+        for (Review r : reviews) {
+            int star = (int) Math.round(r.getOverallRating());
+            if (star >= 1 && star <= 5) ratingDist[star]++;
+            roundedStars.put(r.getId(), star);
+        }
+        model.addAttribute("merchant", merchant);
+        model.addAttribute("reviews", reviews);
+        model.addAttribute("ratingDist", ratingDist);
+        model.addAttribute("roundedStars", roundedStars);
+        model.addAttribute("activeTab", "orders");
+        return "merchant/reviews";
+    }
+
+    // ============ 评价回复 ============
+
+    @PostMapping("/review/reply/{id}")
+    @ResponseBody
+    public Map<String, Object> replyReview(@PathVariable Long id, @RequestParam String reply) {
+        Review r = reviewRepository.findById(id).orElseThrow(() -> new RuntimeException("评价不存在"));
+        r.setReply(reply);
+        reviewRepository.save(r);
+        return Map.of("ok", true);
+    }
+
+    // ============ 我的 ============
+
+    @GetMapping("/my")
+    public String my(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        Merchant merchant = currentMerchant(userDetails);
+        User user = merchant.getUser();
+        model.addAttribute("merchant", merchant);
+        model.addAttribute("user", user);
+        model.addAttribute("activeTab", "my");
+        return "merchant/my";
     }
 
     // ============ 收益统计 ============

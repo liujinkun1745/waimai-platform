@@ -28,7 +28,43 @@
                       th:text="${order.status}"></span>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body" th:with="step=${order.step}">
+            <!-- 步骤条 -->
+            <div th:if="${order.status != '已取消'}" class="order-stepper mb-4 px-2">
+                <div class="stepper-step">
+                    <div class="stepper-dot" th:classappend="${step >= 0} ? 'active' : ''" style="width:34px;height:34px">
+                        <span th:if="${step > 0}"><i class="bi bi-check"></i></span>
+                        <span th:unless="${step > 0}">1</span>
+                    </div>
+                    <span class="stepper-label" th:classappend="${step == 0} ? 'active' : (${step > 0} ? 'done' : '')">待接单</span>
+                </div>
+                <div class="stepper-step">
+                    <div class="stepper-dot" th:classappend="${step >= 1} ? 'active' : ''" style="width:34px;height:34px">
+                        <span th:if="${step > 1}"><i class="bi bi-check"></i></span>
+                        <span th:unless="${step > 1}">2</span>
+                    </div>
+                    <span class="stepper-label" th:classappend="${step == 1} ? 'active' : (${step > 1} ? 'done' : '')">待配送</span>
+                </div>
+                <div class="stepper-step">
+                    <div class="stepper-dot" th:classappend="${step >= 2} ? 'active' : ''" style="width:34px;height:34px">
+                        <span th:if="${step > 2}"><i class="bi bi-check"></i></span>
+                        <span th:unless="${step > 2}">3</span>
+                    </div>
+                    <span class="stepper-label" th:classappend="${step == 2} ? 'active' : (${step > 2} ? 'done' : '')">配送中</span>
+                </div>
+                <div class="stepper-step">
+                    <div class="stepper-dot" th:classappend="${step >= 3} ? 'done' : ''" style="width:34px;height:34px">
+                        <span th:if="${step >= 3}"><i class="bi bi-check"></i></span>
+                        <span th:unless="${step >= 3}">✓</span>
+                    </div>
+                    <span class="stepper-label" th:classappend="${step >= 3} ? 'done' : ''">已完成</span>
+                </div>
+            </div>
+            <div th:if="${order.status == '已取消'}" class="stepper-cancelled mb-4">
+                <div class="cancelled-dot" style="width:34px;height:34px"><i class="bi bi-x text-danger fs-5"></i></div>
+                <div><strong>订单已取消</strong></div>
+            </div>
+
             <!-- 商品列表 -->
             <table class="table table-sm">
                 <thead class="table-light">
@@ -61,5 +97,6 @@
 <!-- 加载 Bootstrap JS 和 main.js -->
 <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 <th:block th:replace="~{fragments/layout :: footer}"></th:block>
+<th:block th:replace="~{fragments/merchant-nav :: bottom-nav}"></th:block>
 </body>
 </html>

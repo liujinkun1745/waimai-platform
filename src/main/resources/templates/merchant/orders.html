@@ -7,121 +7,81 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
+    <style>body{padding-bottom:80px;background:#F5F5F6}</style>
 </head>
 <body>
-<th:block th:replace="~{fragments/layout :: header}"></th:block>
-<th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+<div class="container px-3 pt-3">
+    <!-- 商家头部 -->
+    <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded-3" style="background:linear-gradient(135deg,#FFF8E1,#FFE082)">
+        <div>
+            <h5 class="fw-bold mb-0" th:text="${merchant.shopName}">店铺名</h5>
+            <small class="text-muted" th:text="${merchant.shopAddress}"></small>
+        </div>
+        <a th:href="@{/merchant/shop/toggle-status}" class="btn btn-sm rounded-pill"
+           th:classappend="${merchant.status=='营业中'} ? 'btn-success' : 'btn-secondary'">
+            <i class="bi bi-power"></i> <span th:text="${merchant.status}"></span>
+        </a>
+    </div>
 
-<div class="container mt-4">
-    <a href="javascript:history.back()" class="btn btn-outline-warning btn-sm mb-3">
-        <i class="bi bi-arrow-left"></i> 返回
-    </a>
-    <h5 class="fw-bold mb-3"><i class="bi bi-receipt text-yellow"></i> 订单管理</h5>
+    <div class="row g-2 mb-3">
+        <div class="col-6">
+            <a th:href="@{/merchant/orders(status='待接单')}" class="text-decoration-none">
+                <div class="card border-0" style="border-left:4px solid var(--yellow);border-radius:10px">
+                    <div class="card-body p-3"><small class="text-muted">待接单</small><div class="fs-4 fw-bold" th:text="${pendingCount}">0</div></div>
+                </div></a></div>
+        <div class="col-6">
+            <div class="card border-0" style="border-left:4px solid #3498DB;border-radius:10px">
+                <div class="card-body p-3"><small class="text-muted">今日订单</small><div class="fs-4 fw-bold" th:text="${todayCount}">0</div></div></div></div>
+        <div class="col-6">
+            <a th:href="@{/merchant/earnings}" class="text-decoration-none">
+                <div class="card border-0" style="border-left:4px solid #27AE60;border-radius:10px">
+                    <div class="card-body p-3"><small class="text-muted">今日收益</small><div class="fs-4 fw-bold text-danger">¥<span th:text="${todayEarnings}">0</span></div></div></div></a></div>
+        <div class="col-6">
+            <a th:href="@{/merchant/reviews}" class="text-decoration-none">
+                <div class="card border-0" style="border-left:4px solid #8E44AD;border-radius:10px">
+                    <div class="card-body p-3"><small class="text-muted">店铺评分</small><div class="fs-4 fw-bold">⭐<span th:text="${merchant.rating}">4.5</span></div></div></div></a></div>
+    </div>
 
-    <!-- 状态筛选 -->
-    <div class="mb-4">
+    <div class="mb-3">
         <nav class="nav nav-pills flex-wrap gap-1">
-            <a class="nav-link" th:classappend="${currentStatus==null} ? 'active' : ''"
-               th:href="@{/merchant/orders}">全部</a>
-            <a class="nav-link" th:classappend="${currentStatus=='待接单'} ? 'active' : ''"
-               th:href="@{/merchant/orders(status='待接单')}">待接单</a>
-            <a class="nav-link" th:classappend="${currentStatus=='待配送'} ? 'active' : ''"
-               th:href="@{/merchant/orders(status='待配送')}">待配送</a>
-            <a class="nav-link" th:classappend="${currentStatus=='配送中'} ? 'active' : ''"
-               th:href="@{/merchant/orders(status='配送中')}">配送中</a>
-            <a class="nav-link" th:classappend="${currentStatus=='已完成'} ? 'active' : ''"
-               th:href="@{/merchant/orders(status='已完成')}">已完成</a>
-            <a class="nav-link" th:classappend="${currentStatus=='已取消'} ? 'active' : ''"
-               th:href="@{/merchant/orders(status='已取消')}">已取消</a>
+            <a class="nav-link" th:classappend="${currentStatus==null}?'active':''" th:href="@{/merchant/orders}">全部</a>
+            <a class="nav-link" th:classappend="${currentStatus=='待接单'}?'active':''" th:href="@{/merchant/orders(status='待接单')}">待接单</a>
+            <a class="nav-link" th:classappend="${currentStatus=='待配送'}?'active':''" th:href="@{/merchant/orders(status='待配送')}">待配送</a>
+            <a class="nav-link" th:classappend="${currentStatus=='配送中'}?'active':''" th:href="@{/merchant/orders(status='配送中')}">配送中</a>
+            <a class="nav-link" th:classappend="${currentStatus=='已完成'}?'active':''" th:href="@{/merchant/orders(status='已完成')}">已完成</a>
+            <a class="nav-link" th:classappend="${currentStatus=='已取消'}?'active':''" th:href="@{/merchant/orders(status='已取消')}">已取消</a>
         </nav>
     </div>
 
-    <!-- 空状态 -->
-    <div th:if="${#lists.isEmpty(orders)}" class="empty-state">
-        <span class="empty-icon"><i class="bi bi-inbox"></i></span>
-        <p class="empty-text fw-bold">暂无订单</p>
-    </div>
+    <div th:if="${#lists.isEmpty(orders)}" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1"></i><p>暂无订单</p></div>
 
-    <!-- 订单卡片 -->
-    <div th:each="o,iter : ${orders}" class="card shadow-sm mb-3"
-         th:style="'animation: slideUp 0.35s ease both; animation-delay: ' + ${iter.index * 0.04} + 's'"
-         th:with="items=${itemsMap.get(o.id)}">
-
-        <!-- 卡片头部 -->
-        <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
-            <div>
-                <span class="status-badge" th:class="'status-' + ${o.status}" th:text="${o.status}"></span>
-                <small class="text-muted ms-2" th:text="${#temporals.format(o.createdAt,'MM-dd HH:mm')}"></small>
-            </div>
-            <span class="text-danger fw-bold">¥<span th:text="${o.totalAmount}"></span></span>
-        </div>
-
-        <!-- 商品清单（直接展示） -->
+    <div th:each="o : ${orders}" class="card shadow-sm mb-2" th:with="items=${itemsMap.get(o.id)}">
         <div class="card-body p-3">
-            <div class="order-items">
-                <div th:each="item,it : ${items}" th:if="${it.index < 3}"
-                     class="d-flex justify-content-between align-items-center py-1 border-bottom border-light small">
-                    <span class="text-truncate" style="max-width:60%">
-                        <span th:text="${item.productName}">商品名</span>
-                    </span>
-                    <span>
-                        <span class="text-muted">×<span th:text="${item.quantity}">1</span></span>
-                        <span class="ms-2">¥<span th:text="${item.subtotal}">0</span></span>
-                    </span>
-                </div>
-                <div th:if="${items != null and items.size() > 3}" class="collapse" th:attr="id='more-'+${o.id}">
-                    <div th:each="item,it : ${items}" th:if="${it.index >= 3}"
-                         class="d-flex justify-content-between align-items-center py-1 border-bottom border-light small">
-                        <span class="text-truncate" style="max-width:60%">
-                            <span th:text="${item.productName}">商品名</span>
-                        </span>
-                        <span>
-                            <span class="text-muted">×<span th:text="${item.quantity}">1</span></span>
-                            <span class="ms-2">¥<span th:text="${item.subtotal}">0</span></span>
-                        </span>
-                    </div>
-                </div>
-                <button th:if="${items != null and items.size() > 3}"
-                        class="btn btn-link btn-sm p-0 mt-1 text-decoration-none"
-                        data-bs-toggle="collapse" th:attr="data-bs-target='#more-'+${o.id},data-total=${items.size() - 3}"
-                        onclick="var t=this,n=parseInt(this.dataset.total);t.textContent=t.textContent.includes('查看全部')?'收起▲':'查看全部 ('+n+'件) ▼'">
-                    查看全部 (<span th:text="${items.size() - 3}">0</span>件) ▼
-                </button>
-                <div th:if="${items == null or items.isEmpty()}" class="small text-muted">暂无商品明细</div>
+            <div class="d-flex justify-content-between mb-1">
+                <span class="status-badge small" th:class="'status-'+${o.status}" th:text="${o.status}"></span>
+                <small class="text-muted" th:text="${#temporals.format(o.createdAt,'MM-dd HH:mm')}"></small>
             </div>
-
-            <!-- 底部信息 + 操作 -->
-            <div class="d-flex justify-content-between align-items-end mt-2 pt-2 border-top">
-                <div>
-                    <small class="text-muted"><span th:text="${o.orderNo}"></span></small>
-                    <div class="small text-muted text-truncate" style="max-width:260px" th:text="${o.addressSnapshot}"></div>
-                </div>
-                <div class="d-flex gap-1 flex-shrink-0">
-                    <a th:href="@{/merchant/order/{id}(id=${o.id})}" class="btn btn-outline-warning btn-sm py-0 px-2">
-                        <i class="bi bi-eye"></i>
-                    </a>
-                    <form th:if="${o.status=='待接单'}" th:action="@{/merchant/order/accept/{id}(id=${o.id})}" method="post">
-                        <button type="submit" class="btn btn-warning btn-sm py-0 px-2">
-                            <i class="bi bi-check-lg"></i> 接单
-                        </button>
-                    </form>
-                    <form th:if="${o.status=='待配送'}" th:action="@{/merchant/order/deliver/{id}(id=${o.id})}" method="post">
-                        <button type="submit" class="btn btn-info btn-sm py-0 px-2 text-white">
-                            <i class="bi bi-truck"></i> 配送
-                        </button>
-                    </form>
-                    <form th:if="${o.status=='配送中'}" th:action="@{/merchant/order/complete/{id}(id=${o.id})}" method="post">
-                        <button type="submit" class="btn btn-success btn-sm py-0 px-2">
-                            <i class="bi bi-check-circle"></i> 完成
-                        </button>
-                    </form>
+            <div class="order-items small">
+                <th:block th:each="item,it : ${items}" th:if="${it.index<3}">
+                    <span class="text-truncate" th:text="${item.productName}"></span>
+                    <span class="text-muted">×<span th:text="${item.quantity}">1</span></span>
+                </th:block>
+                <small th:if="${items!=null and items.size()>3}" class="text-muted"> ...共<span th:text="${items.size()}">0</span>件</small>
+                <small th:if="${items==null}">暂无明细</small>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                <strong class="text-danger">¥<span th:text="${o.totalAmount}"></span></strong>
+                <div class="d-flex gap-1">
+                    <a th:href="@{/merchant/order/{id}(id=${o.id})}" class="btn btn-outline-warning btn-sm py-0 px-2"><i class="bi bi-eye"></i></a>
+                    <form th:if="${o.status=='待接单'}" th:action="@{/merchant/order/accept/{id}(id=${o.id})}" method="post"><button class="btn btn-warning btn-sm py-0 px-2">接单</button></form>
+                    <form th:if="${o.status=='待配送'}" th:action="@{/merchant/order/deliver/{id}(id=${o.id})}" method="post"><button class="btn btn-info btn-sm py-0 px-2 text-white">配送</button></form>
+                    <form th:if="${o.status=='配送中'}" th:action="@{/merchant/order/complete/{id}(id=${o.id})}" method="post"><button class="btn btn-success btn-sm py-0 px-2">完成</button></form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
 <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
-<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+<th:block th:replace="~{fragments/merchant-nav :: bottom-nav}"></th:block>
 </body>
 </html>

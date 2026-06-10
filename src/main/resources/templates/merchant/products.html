@@ -16,9 +16,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm me-2" title="返回上一页">
-                <i class="bi bi-arrow-left"></i> 返回
-            </a>
+            <a href="javascript:history.back()" class="back-btn me-2"><i class="bi bi-chevron-left"></i> 返回</a>
             <h5 class="fw-bold mb-0 d-inline"><i class="bi bi-box"></i> 商品管理</h5>
         </div>
         <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#productModal"
@@ -37,6 +35,7 @@
             <thead class="table-warning">
                 <tr>
                     <th>#</th>
+                    <th>图片</th>
                     <th>商品名称</th>
                     <th>价格</th>
                     <th>库存</th>
@@ -48,6 +47,15 @@
             <tbody>
                 <tr th:each="p : ${products}">
                     <td th:text="${p.id}"></td>
+                    <td>
+                        <div class="rounded-2 bg-light d-flex align-items-center justify-content-center"
+                             style="width:40px;height:40px;overflow:hidden">
+                            <img th:if="${p.image != null and !p.image.isEmpty()}"
+                                 th:src="${p.image}" style="width:100%;height:100%;object-fit:cover"
+                                 onerror="this.onerror=null;this.parentElement.innerHTML='🍽️'">
+                            <span th:unless="${p.image != null and !p.image.isEmpty()}" style="font-size:1.2rem">🍽️</span>
+                        </div>
+                    </td>
                     <td th:text="${p.name}"></td>
                     <td class="text-danger fw-bold">¥<span th:text="${p.price}"></span></td>
                     <td th:text="${p.stock}"></td>
@@ -109,7 +117,11 @@
                         <div class="col-6">
                             <label class="form-label">图片 URL</label>
                             <input type="text" name="image" id="prodImage" class="form-control"
-                                   placeholder="/images/food1.svg">
+                                   placeholder="/images/food1.svg" oninput="previewImage(this.value)">
+                        </div>
+                        <div class="col-6 d-flex align-items-end">
+                            <div id="imagePreview" class="rounded-2 bg-light d-flex align-items-center justify-content-center"
+                                 style="width:60px;height:60px;font-size:1.8rem">🍽️</div>
                         </div>
                         <div class="col-12">
                             <label class="form-label">商品描述</label>
@@ -127,6 +139,14 @@
 </div>
 
 <script>
+    function previewImage(url) {
+        var pv = document.getElementById('imagePreview');
+        if (url && url.trim()) {
+            pv.innerHTML = '<img src="'+url.trim()+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML=\'🍽️\'">';
+        } else {
+            pv.innerHTML = '🍽️';
+        }
+    }
     function clearProductForm() {
         document.getElementById('productModalTitle').textContent = '新增商品';
         document.getElementById('productForm').action = '/merchant/product/add';
@@ -136,6 +156,7 @@
         document.getElementById('prodStock').value = '999';
         document.getElementById('prodImage').value = '';
         document.getElementById('prodDesc').value = '';
+        previewImage('');
     }
 
     // 编辑 — 事件委托，避免 th:attr 内联 onclick 参数转义问题
@@ -151,6 +172,7 @@
         document.getElementById('prodStock').value = btn.getAttribute('data-stock') || '0';
         document.getElementById('prodImage').value = btn.getAttribute('data-image') || '';
         document.getElementById('prodDesc').value = btn.getAttribute('data-desc') || '';
+        previewImage(btn.getAttribute('data-image'));
     });
 </script>
 
@@ -158,5 +180,6 @@
 <!-- 加载 Bootstrap JS 和 main.js -->
 <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 <th:block th:replace="~{fragments/layout :: footer}"></th:block>
+<th:block th:replace="~{fragments/merchant-nav :: bottom-nav}"></th:block>
 </body>
 </html>
