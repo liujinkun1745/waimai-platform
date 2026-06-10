@@ -77,6 +77,7 @@
                         <i class="bi" th:classappend="${p.status=='上架'}?'bi-toggle-on':'bi-toggle-off'"></i>
                     </button>
                     <button class="btn btn-sm py-0 px-1 text-muted" th:onclick="'event.stopPropagation();editProduct(' + ${p.id} + ')'"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm py-0 px-1 text-muted" th:onclick="'event.stopPropagation();deleteProduct(' + ${p.id} + ')'"><i class="bi bi-trash"></i></button>
                 </div>
                 <div class="text-center py-2 text-muted small no-product-msg" th:if="${categoryProductCounts.get(c.id) == null}">拖拽商品到这里</div>
             </div>
@@ -146,6 +147,7 @@ function addCategory(){
     fetch('/merchant/category/add',{method:'POST',body:fd}).then(function(){location.reload();});
 }
 function deleteCat(cid){ showConfirm('删除分类及商品？',function(){location.href='/merchant/category/delete/'+cid;}); }
+function deleteProduct(pid){ showConfirm('确定删除该商品？',function(){location.href='/merchant/product/delete/'+pid;}); }
 
 var editId=null;
 function showAddProduct(){ editId=null;document.getElementById('prodModalTitle').textContent='新增商品';

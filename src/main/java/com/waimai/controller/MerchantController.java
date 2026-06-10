@@ -182,6 +182,13 @@ public class MerchantController {
         return "redirect:/merchant/products-all";
     }
 
+    @GetMapping("/product/delete/{id}")
+    public String deleteProduct(@PathVariable Long id, RedirectAttributes ra) {
+        productService.delete(id);
+        ra.addFlashAttribute("message", "商品已删除");
+        return "redirect:/merchant/products-all";
+    }
+
     // ============ 订单管理 ============
 
     @GetMapping("/orders")

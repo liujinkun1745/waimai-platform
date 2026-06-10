@@ -85,4 +85,10 @@ public class ProductService {
         product.setStatus("上架".equals(product.getStatus()) ? "下架" : "上架");
         productRepository.save(product);
     }
+
+    /** 删除商品 */
+    @Transactional
+    public void delete(Long productId) {
+        productRepository.deleteById(productId);
+    }
 }
