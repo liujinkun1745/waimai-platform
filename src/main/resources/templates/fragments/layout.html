@@ -43,13 +43,13 @@
                 </li>
                 <!-- 商家导航 -->
                 <li sec:authorize="hasRole('MERCHANT')" class="nav-item">
-                    <a class="nav-link" th:href="@{/merchant/index}"><i class="bi bi-speedometer2"></i> 仪表盘</a>
+                    <a class="nav-link" th:href="@{/merchant/orders}"><i class="bi bi-receipt"></i> 订单管理</a>
                 </li>
                 <li sec:authorize="hasRole('MERCHANT')" class="nav-item">
                     <a class="nav-link" th:href="@{/merchant/orders}"><i class="bi bi-receipt"></i> 订单</a>
                 </li>
                 <li sec:authorize="hasRole('MERCHANT')" class="nav-item">
-                    <a class="nav-link" th:href="@{/merchant/products}"><i class="bi bi-box"></i> 商品</a>
+                    <a class="nav-link" th:href="@{/merchant/products-all}"><i class="bi bi-box"></i> 商品管理</a>
                 </li>
                 <!-- 用户下拉 -->
                 <li sec:authorize="isAuthenticated()" class="nav-item dropdown">

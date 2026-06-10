@@ -40,34 +40,6 @@ public class MerchantController {
         return merchantService.findByUserId(user.getId());
     }
 
-    // ============ 首页仪表盘 ============
-
-    @GetMapping("/index")
-    public String index(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        Merchant merchant = currentMerchant(userDetails);
-        User user = merchant.getUser();
-        model.addAttribute("user", user);
-        model.addAttribute("merchant", merchant);
-
-        // 待处理订单数
-        List<Order> pendingOrders = orderService.listByMerchant(merchant.getId(), "待接单");
-        model.addAttribute("pendingCount", pendingOrders.size());
-
-        // 今日订单
-        List<Order> todayOrders = orderService.listByMerchant(merchant.getId(), null);
-        long todayCount = todayOrders.stream()
-                .filter(o -> o.getCreatedAt().toLocalDate().equals(LocalDate.now()))
-                .count();
-        model.addAttribute("todayOrderCount", todayCount);
-
-        // 商品总数
-        List<Product> products = productService.listAll(merchant.getId());
-        model.addAttribute("productCount", products.size());
-
-        model.addAttribute("activeTab", "dashboard");
-        return "merchant/index";
-    }
-
     // ============ 店铺管理 ============
 
     @GetMapping("/shop/edit")
@@ -172,18 +144,6 @@ public class MerchantController {
 
     // ============ 商品管理 ============
 
-    @GetMapping("/products")
-    public String products(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        Merchant merchant = currentMerchant(userDetails);
-        List<Product> products = productService.listAll(merchant.getId());
-        List<Category> categories = categoryService.listByMerchant(merchant.getId());
-        model.addAttribute("merchant", merchant);
-        model.addAttribute("products", products);
-        model.addAttribute("categories", categories);
-        model.addAttribute("activeTab", "products");
-        return "merchant/products";
-    }
-
     @PostMapping("/product/add")
     public String addProduct(@AuthenticationPrincipal UserDetails userDetails,
                               @RequestParam Long categoryId,
@@ -198,7 +158,7 @@ public class MerchantController {
                 image != null ? image : "/images/food1.svg",
                 description != null ? description : "");
         ra.addFlashAttribute("message", "商品添加成功");
-        return "redirect:/merchant/products";
+        return "redirect:/merchant/products-all";
     }
 
     @PostMapping("/product/edit/{id}")
@@ -212,14 +172,14 @@ public class MerchantController {
                                RedirectAttributes ra) {
         productService.update(id, categoryId, name, price, stock, image, description);
         ra.addFlashAttribute("message", "商品更新成功");
-        return "redirect:/merchant/products";
+        return "redirect:/merchant/products-all";
     }
 
     @GetMapping("/product/toggle/{id}")
     public String toggleProduct(@PathVariable Long id, RedirectAttributes ra) {
         productService.toggleStatus(id);
         ra.addFlashAttribute("message", "商品状态已切换");
-        return "redirect:/merchant/products";
+        return "redirect:/merchant/products-all";
     }
 
     // ============ 订单管理 ============
