@@ -113,7 +113,7 @@ cd 外卖
 mvn clean spring-boot:run
 ```
 
-访问 **http://localhost:8080**，首次启动自动初始化测试数据。
+访问 ** http://localhost:8080 **，首次启动自动初始化测试数据。
 
 ## 🔑 测试账号
 
